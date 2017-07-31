@@ -32,7 +32,8 @@ the commented section below at the end of the setup() function.
 #define FONA_RST 4
 #define FONA_RI  7
 
-#define LOCK 13
+#define LOCK 12
+#define LED  13
 
 // this is a large buffer for replies
 char replybuffer[255];
@@ -229,6 +230,12 @@ void printMenu(void) {
 
 char fonaInBuffer[64];          //for notifications from the FONA
 
+void SendResponse(const char* response)
+{
+  Serial.println(response);
+  fona.sendSMS(callerIDbuffer, response);
+}
+
 void processCommand(char command) {
   Serial.println(command);
   switch (command) {
@@ -238,9 +245,11 @@ void processCommand(char command) {
       }
     case '1': {
         //unlock the lock for 5 seconds.
-        digitalWrite(LOCK, HIGH);   // turn the LED on (HIGH is the voltage level)
+        digitalWrite(LOCK, HIGH); // turn the LOCK on (HIGH is the voltage level)
+        digitalWrite(LED,  HIGH); // turn the LED on (HIGH is the voltage level)
         delay(5000);              // wait for a second
-        digitalWrite(LOCK, LOW);    // turn the LED off by making the voltage LOW
+        digitalWrite(LOCK, LOW);  // turn the LOCK off by making the voltage LOW
+        digitalWrite(LED,  LOW);  // turn the LED off by making the voltage LOW
 
         break;
       }
@@ -248,9 +257,11 @@ void processCommand(char command) {
         // read the ADC
         uint16_t adc;
         if (! fona.getADCVoltage(&adc)) {
-          Serial.println(F("Failed to read ADC"));
+          SendResponse("Failed to read ADC");
         } else {
-          Serial.print(F("ADC = ")); Serial.print(adc); Serial.println(F(" mV"));
+          char str[32];
+          sprintf(str, "ADC = %d mV", adc); // puts string into buffer
+          SendResponse(str);
         }
         break;
       }
@@ -259,16 +270,19 @@ void processCommand(char command) {
         // read the battery voltage and percentage
         uint16_t vbat;
         if (! fona.getBattVoltage(&vbat)) {
-          Serial.println(F("Failed to read Batt"));
+          SendResponse("Failed to read Batt");
         } else {
-          Serial.print(F("VBat = ")); Serial.print(vbat); Serial.println(F(" mV"));
+          char str[32];
+          sprintf(str, "VBat = %d mV", vbat); // puts string into buffer
+          SendResponse(str);
         }
 
-
         if (! fona.getBattPercent(&vbat)) {
-          Serial.println(F("Failed to read Batt"));
+          SendResponse("Failed to read Batt");
         } else {
-          Serial.print(F("VPct = ")); Serial.print(vbat); Serial.println(F("%"));
+          char str[32];
+          sprintf(str, "VPct = %d %%", vbat); // puts string into buffer
+          SendResponse(str);
         }
 
         break;
@@ -336,7 +350,7 @@ void processCommand(char command) {
         if (smsnum < 0) {
           Serial.println(F("Could not read # SMS"));
         } else {
-          fona.sendSMS(callerIDbuffer, smsnum);
+          
           Serial.print(smsnum);
           fona.sendSMS(callerIDbuffer, " SMS's on SIM card!");
           Serial.println(F(" SMS's on SIM card!"));
