@@ -151,19 +151,20 @@ void setup() {
       break;
     }
     delay(1000);
+  }
     
-    //TODO: change this to a function call, non-blocking (without delays)
-    for (int i=0; i <= 10; i++){
-      digitalWrite(LED,  HIGH);
-      delay(100);
-      digitalWrite(LED,  LOW);
-      delay(100);
-    }
-    for (int i=0; i <= 1; i++){
-      digitalWrite(LOCK, HIGH);
-      delay(1000);
-      digitalWrite(LOCK, LOW);
-    }
+  //TODO: change this to a function call, non-blocking (without delays)
+  for (int i=0; i <= 10; i++){
+    digitalWrite(LED,  HIGH);
+    delay(100);
+    digitalWrite(LED,  LOW);
+    delay(100);
+  }
+  for (int i=0; i <= 1; i++){
+    digitalWrite(LOCK, HIGH);
+    delay(1000);
+    digitalWrite(LOCK, LOW);
+  }
 }
 
 void printMenu(void) {
