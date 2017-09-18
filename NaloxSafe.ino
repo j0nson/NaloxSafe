@@ -1,5 +1,5 @@
 #include "Adafruit_FONA.h"
-
+#define ADMIN_PHONE "410XXXXXXX"
 #define FONA_RX  9
 #define FONA_TX  8
 #define FONA_RST 4
@@ -142,7 +142,7 @@ void setup() {
     if (n == 4) Serial.println(F("Unknown"));
     if (n == 5) Serial.println(F("Registered roaming"));
     if (n == 1) {
-      if (!fona.sendSMS("410XXXXXXX", "Fona Ready")) {
+      if (!fona.sendSMS(ADMIN_PHONE, "Fona Ready")) {
         Serial.println(F("Status Message Failed"));
         //TODO: Blink error code
       } else {
