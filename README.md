@@ -1,5 +1,7 @@
 # TODO:
 
+  Command Security
+  
   Low Power Mode
   
   Bluetooth debug connection
