@@ -1,30 +1,3 @@
-/***************************************************
-  This is an example for our Adafruit FONA Cellular Module
-
-  Designed specifically to work with the Adafruit FONA
-  ----> http://www.adafruit.com/products/1946
-  ----> http://www.adafruit.com/products/1963
-  ----> http://www.adafruit.com/products/2468
-  ----> http://www.adafruit.com/products/2542
-
-  These cellular modules use TTL Serial to communicate, 2 pins are
-  required to interface
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit and open-source hardware by purchasing
-  products from Adafruit!
-
-  Written by Limor Fried/Ladyada for Adafruit Industries.
-  BSD license, all text above must be included in any redistribution
- ****************************************************/
-
-/*
-THIS CODE IS STILL IN PROGRESS!
-
-Open up the serial console on the Arduino at 115200 baud to interact with FONA
-
-Note that if you need to set a GPRS APN, username, and password scroll down to
-the commented section below at the end of the setup() function.
-*/
 #include "Adafruit_FONA.h"
 
 #define FONA_RX  9
@@ -38,22 +11,10 @@ the commented section below at the end of the setup() function.
 // this is a large buffer for replies
 char replybuffer[255];
 char callerIDbuffer[32];  //we'll store the SMS sender number in here
-
-// We default to using software serial. If you want to use hardware serial
-// (because softserial isnt supported) comment out the following three lines 
-// and uncomment the HardwareSerial line
 #include <SoftwareSerial.h>
 SoftwareSerial fonaSS = SoftwareSerial(FONA_TX, FONA_RX);
 SoftwareSerial *fonaSerial = &fonaSS;
-
-// Hardware serial is also possible!
-//  HardwareSerial *fonaSerial = &Serial1;
-
-// Use this for FONA 800 and 808s
 Adafruit_FONA fona = Adafruit_FONA(FONA_RST);
-// Use this one for FONA 3G
-//Adafruit_FONA_3G fona = Adafruit_FONA_3G(FONA_RST);
-
 uint8_t readline(char *buff, uint8_t maxbuff, uint16_t timeout = 0);
 
 uint8_t type;
@@ -124,20 +85,18 @@ uint8_t readline(char *buff, uint8_t maxbuff, uint16_t timeout) {
 }
 
 void setup() {
-
-  // initialize digital pin 13 as an output.
+  // initialize digital pin 12 and 13 as an output.
   pinMode(LOCK, OUTPUT);
-  
-  while (!Serial);
+  pinMode(LED, OUTPUT);
 
   Serial.begin(115200);
-  Serial.println(F("FONA basic test"));
   Serial.println(F("Initializing....(May take 3 seconds)"));
 
   fonaSerial->begin(4800);
   if (! fona.begin(*fonaSerial)) {
     Serial.println(F("Couldn't find FONA"));
-    while (1);
+    //TODO: LED BLINK CODE TO TELL US IF THE FONA IS DEAD
+    while (1); //BLOCKING
   }
   type = fona.type();
   Serial.println(F("FONA is OK"));
@@ -165,23 +124,50 @@ void setup() {
   if (imeiLen > 0) {
     Serial.print("Module IMEI: "); Serial.println(imei);
   }
-
-  // Optionally configure a GPRS APN, username, and password.
-  // You might need to do this to access your network's GPRS/data
-  // network.  Contact your provider for the exact APN, username,
-  // and password values.  Username and password are optional and
-  // can be removed, but APN is required.
+  //Additional options not needed at this point:
   //fona.setGPRSNetworkSettings(F("your APN"), F("your username"), F("your password"));
-
-  // Optionally configure HTTP gets to follow redirects over SSL.
-  // Default is not to follow SSL redirects, however if you uncomment
-  // the following line then redirects over SSL will be followed.
   //fona.setHTTPSRedirect(true);
 
   printMenu();
+  
+  for (int i=0; i <= 30; i++) {
+    uint8_t n = fona.getNetworkStatus();
+    Serial.print(F("Network status "));
+    Serial.print(n);
+    Serial.print(F(": "));
+    if (n == 0) Serial.println(F("Not registered"));
+    if (n == 1) Serial.println(F("Registered (home)"));
+    if (n == 2) Serial.println(F("Not registered (searching)"));
+    if (n == 3) Serial.println(F("Denied"));
+    if (n == 4) Serial.println(F("Unknown"));
+    if (n == 5) Serial.println(F("Registered roaming"));
+    if (n == 1) {
+      if (!fona.sendSMS("410XXXXXXX", "Fona Ready")) {
+        Serial.println(F("Status Message Failed"));
+        //TODO: Blink error code
+      } else {
+        Serial.println(F("Status Message Sent"));
+      }
+      break;
+    }
+    delay(1000);
+    
+    //TODO: change this to a function call, non-blocking (without delays)
+    for (int i=0; i <= 10; i++){
+      digitalWrite(LED,  HIGH);
+      delay(100);
+      digitalWrite(LED,  LOW);
+      delay(100);
+    }
+    for (int i=0; i <= 1; i++){
+      digitalWrite(LOCK, HIGH);
+      delay(1000);
+      digitalWrite(LOCK, LOW);
+    }
 }
 
 void printMenu(void) {
+  //TODO: customize menu.  We do not need all of these options, and should add other options.
   Serial.println(F("-------------------------------------"));
   Serial.println(F("[?] Print this menu"));
 
@@ -244,6 +230,7 @@ void processCommand(char command) {
         break;
       }
     case '1': {
+        //TODO: make this into a function call
         //unlock the lock for 5 seconds.
         digitalWrite(LOCK, HIGH); // turn the LOCK on (HIGH is the voltage level)
         digitalWrite(LED,  HIGH); // turn the LED on (HIGH is the voltage level)
@@ -611,7 +598,7 @@ void loop() {
       if (! fona.readSMS(slot, replybuffer, 250, &smslen)) { // pass in buffer and max len!
         Serial.println("Failed to read sms!\r\n");
       }
-      
+      //TODO: Evaluate removing this response, it is an added SMS, we should be efficient
       //Send back an automatic response
       Serial.println("Sending reponse...");
       if (!fona.sendSMS(callerIDbuffer, "Processing command")) {
@@ -619,7 +606,7 @@ void loop() {
       } else {
         Serial.println(F("Sent!"));
       }
-
+      //TODO: Add Security before sending to processCommand()
       processCommand(replybuffer[0]);
       
       // delete the original msg after it is processed
