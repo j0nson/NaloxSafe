@@ -258,11 +258,12 @@ void processCommand(char command) {
         // read the battery voltage and percentage
         uint16_t vbat;
         if (! fona.getBattVoltage(&vbat)) {
-          SendResponse("Failed to read Batt");
+          //SendResponse("Failed to read Batt");
+          Serial.println("Failed to read Batt");
         } else {
           char str[32];
           sprintf(str, "VBat = %d mV", vbat); // puts string into buffer
-          SendResponse(str);
+          //SendResponse(str);
         }
 
         if (! fona.getBattPercent(&vbat)) {
